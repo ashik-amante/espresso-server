@@ -2,7 +2,7 @@ const express = require('express');
 const app = express();
 const cors = require('cors')
 const port = process.env.PORT || 5000;
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 
 
@@ -35,6 +35,7 @@ async function run() {
 
         const database = client.db("coffeeDB");
         const coffeeCollection = database.collection("coffee");
+        const usersCollection = database.collection('users')
 
         // send data to database from client site
         app.post('/coffee', async(req, res) => {
@@ -47,6 +48,49 @@ async function run() {
         app.get('/coffee', async(req,res)=>{
             const cursor = coffeeCollection.find()
             const result = await cursor.toArray();
+            res.send(result)
+        })
+        // get single data from db
+        app.get('/coffee/:id', async(req,res)=>{
+            const id  = req.params.id;
+            const quary = {_id: new ObjectId(id)}
+            const result = await coffeeCollection.findOne(quary)
+            res.send(result)
+        })
+        // delete operation
+        app.delete('/coffee/:id',async(req,res)=>{
+            const id = req.params.id;
+            const quary = {_id: new ObjectId(id)}
+            const result = await coffeeCollection.deleteOne(quary)
+            res.send(result)
+        })
+        // update /put
+        app.put('/coffee/:id',async(req,res)=>{
+            const id = req.params.id
+            const updatedCoffee = req.body;
+            const filter = {_id:new ObjectId(id)}
+            const option = { upsert: true}
+            const coffee = {
+                $set:{
+                    name:updatedCoffee.name,
+                    chef:updatedCoffee.chef,
+                    supplier:updatedCoffee.supplier,
+                    taste:updatedCoffee.taste,
+                    category:updatedCoffee.category,
+                    details:updatedCoffee.details,
+                    photo:updatedCoffee.photo,
+                }
+            }
+            const result = await coffeeCollection.updateOne(filter,coffee,option)
+            res.send(result)
+        })
+
+        // user related data 
+
+        app.post('/users',async(req,res)=>{
+            const user = req.body;
+            console.log(user);
+            const result = await usersCollection.insertOne(user)
             res.send(result)
         })
 
